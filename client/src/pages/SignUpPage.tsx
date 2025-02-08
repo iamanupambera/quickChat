@@ -28,7 +28,6 @@ export default function SignUpPage() {
   });
 
   const onSubmit = async (data: RegisterType) => {
-    // Ensure the keys match what your signup function expects
     await signup({
       name: data.name,
       phone_number: data.phone_number,

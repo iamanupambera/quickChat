@@ -36,7 +36,7 @@ userRoute.post("/register", validate(registerSchema), async (req, res) => {
   const token = jwt.sign({ name, user_id }, jwtSecret);
 
   res.json({
-    response: { ...user, token },
+    response: { ...user, token, password: undefined },
     message: "registration successfully",
   });
 });
@@ -66,7 +66,10 @@ userRoute.post("/login", validate(loginSchema), async (req, res) => {
   const { user_id, name } = user;
   const token = jwt.sign({ name, user_id }, jwtSecret);
 
-  res.json({ response: { ...user, token }, message: "login successfully" });
+  res.json({
+    response: { ...user, token, password: undefined },
+    message: "login successfully",
+  });
 });
 
 userRoute.get("/profile", auth, async (req, res) => {
@@ -82,6 +85,9 @@ userRoute.get("/profile", auth, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: {
       user_id,
+    },
+    omit: {
+      password: true,
     },
   });
 

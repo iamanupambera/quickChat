@@ -3,19 +3,27 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { LoginType, RegisterType } from "../lib/validationSchema";
 import { AxiosError } from "axios";
+import { clearUser, getToken, setUser } from "./localStorage";
 
 const BASE_URL =
   import.meta.env.MODE === "development" ? "ws://localhost:8080" : "/";
 
-interface User {
+export interface User {
   user_id: number;
   name: string;
-  password: string;
   phone_number: string;
   token: string;
   about: string | null;
   profile_picture_url: string | null;
   createdAt: string;
+}
+
+export interface Conversation {
+  type: string;
+  conversation_id: number;
+  last_message_id: number | null;
+  order_date: Date;
+  created_at: Date;
 }
 
 interface AuthStore {
@@ -24,7 +32,7 @@ interface AuthStore {
   isLoggingIn: boolean;
   isUpdatingProfile: boolean;
   isCheckingAuth: boolean;
-  onlineUsers: Array<unknown>;
+  onlineUsers: Array<Conversation>;
   socket: WebSocket | null;
   checkAuth: () => Promise<void>;
   signup: (data: RegisterType) => Promise<void>;
@@ -33,6 +41,7 @@ interface AuthStore {
   updateProfile: (data: Partial<RegisterType>) => Promise<void>;
   connectSocket: () => void;
   disconnectSocket: () => void;
+  getAllConversation: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -47,8 +56,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/users/profile");
-      set({ authUser: res.data.response });
-      get().connectSocket();
+      set({ authUser: { ...res.data.response, token: getToken() } });
+      await get().getAllConversation();
     } catch (error) {
       console.log("Error in checkAuth:", error);
       set({ authUser: null });
@@ -63,8 +72,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const res = await axiosInstance.post("/users/register", data);
       console.log(res.data.response);
       set({ authUser: res.data.response });
+      setUser(res.data.response);
       toast.success("Account created successfully");
-      get().connectSocket();
+      await get().getAllConversation();
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data?.message);
@@ -79,8 +89,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const res = await axiosInstance.post("/users/login", data);
       set({ authUser: res.data.response });
+      setUser(res.data.response);
       toast.success("Logged in successfully");
-      get().connectSocket();
+      await get().getAllConversation();
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data?.message);
@@ -92,7 +103,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   logout: async () => {
     try {
-      await axiosInstance.post("/users/logout");
+      // await axiosInstance.post("/users/logout");
+      clearUser();
       set({ authUser: null });
       toast.success("Logged out successfully");
       get().disconnectSocket();
@@ -119,12 +131,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  // Establish a native WebSocket connection.
   connectSocket: () => {
     const { authUser, socket } = get();
     if (!authUser) return;
 
-    // Check if a socket already exists and is either open or connecting.
     if (
       socket &&
       (socket.readyState === WebSocket.OPEN ||
@@ -133,27 +143,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return;
     }
 
-    // Create a new WebSocket connection with the token as a query parameter.
     const newSocket = new WebSocket(
       `${BASE_URL}?authHeader=Bearer ${authUser.token}`
     );
 
-    // Set up event handlers using the native WebSocket API.
     newSocket.onopen = () => {
       console.log("WebSocket connected");
-    };
-
-    newSocket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        // Assume that your server sends messages with a structure like:
-        // { event: "getOnlineUsers", userIds: [...] }
-        if (data.event === "getOnlineUsers") {
-          set({ onlineUsers: data.userIds });
-        }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
     };
 
     newSocket.onerror = (error) => {
@@ -167,7 +162,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ socket: newSocket });
   },
 
-  // Disconnect the native WebSocket connection.
   disconnectSocket: () => {
     const { socket } = get();
     if (
@@ -176,6 +170,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         socket.readyState === WebSocket.CONNECTING)
     ) {
       socket.close();
+    }
+  },
+
+  getAllConversation: async () => {
+    try {
+      const res = await axiosInstance.get("/conversations");
+      set({ onlineUsers: res.data.response });
+    } catch (error) {
+      console.log("Error in all conversation:", error);
+      set({ onlineUsers: [] });
     }
   },
 }));
