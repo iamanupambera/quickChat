@@ -53,8 +53,6 @@ export const messageSchema = z.object({
       (files) => !files || files[0]?.type.startsWith("image/"),
       "Invalid image file"
     ),
-
-  sent_at: z.string().transform((str) => new Date(str)),
 });
 
 export type MessageType = z.infer<typeof messageSchema>;

@@ -66,9 +66,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   getMessages: async (conversation_id: number) => {
     set({ isMessagesLoading: true });
+    const { subscribeToConversations } = get();
     try {
+      subscribeToConversations();
       const res = await axiosInstance.get(`/messages/${conversation_id}`);
-      set({ messages: res.data });
+      set({ messages: res.data.response });
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data?.message);
@@ -83,7 +85,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     try {
       await axiosInstance.post(`/messages`, {
         conversation_id: selectConversation?.conversation_id,
-        message: messageData,
+        message: { ...messageData, sent_at: new Date() },
       });
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -92,7 +94,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 
-  subscribeToConversations: async () => {
+  subscribeToConversations: () => {
     const { selectConversation } = get();
     if (!selectConversation) return;
 
