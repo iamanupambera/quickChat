@@ -101,16 +101,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
-    socket.onopen = () => {
-      socket.send(
-        JSON.stringify({
-          action: "subscribe",
-          payload: {
-            channel: `message:new:${selectConversation.conversation_id}`,
-          },
-        })
-      );
-    };
+    socket.send(
+      JSON.stringify({
+        action: "subscribe",
+        payload: {
+          channel: `message:new:${selectConversation.conversation_id}`,
+        },
+      })
+    );
 
     socket.onmessage = (event) => {
       const data: Message = JSON.parse(event.data);

@@ -5,8 +5,7 @@ import { LoginType, RegisterType } from "../lib/validationSchema";
 import { AxiosError } from "axios";
 import { clearUser, getToken, setUser } from "./localStorage";
 
-const BASE_URL =
-  import.meta.env.MODE === "development" ? "ws://localhost:8080" : "/";
+const BASE_URL = "ws://localhost:8080";
 
 export interface User {
   user_id: number;
@@ -58,6 +57,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const res = await axiosInstance.get("/users/profile");
       set({ authUser: { ...res.data.response, token: getToken() } });
       await get().getAllConversation();
+      get().connectSocket();
     } catch (error) {
       console.log("Error in checkAuth:", error);
       set({ authUser: null });

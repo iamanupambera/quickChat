@@ -98,7 +98,7 @@ userRoute.get("/profile", auth, async (req, res) => {
     return;
   }
 
-  res.json({ user, message: "profile details" });
+  res.json({ response: user, message: "profile details" });
 });
 
 export default userRoute;
