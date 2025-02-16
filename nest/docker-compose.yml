@@ -1,0 +1,16 @@
+services:
+  app:
+    container_name: backend
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: 'start:debug'
+    volumes:
+      - ./src:/api/src
+      - ./package.json:/api/package.json
+    env_file:
+      - .env
+    ports:
+      - '${PORT}:${PORT}'
+    # depends_on:
+    #   - mongodb

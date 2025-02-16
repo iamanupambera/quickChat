@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id             Int                @id @default(autoincrement())
+  name                String
+  phone_number        String             @unique
+  password            String
+  about               String?
+  profile_picture_url String?
+  messages            Message[]
+  group_memberships   GroupMember[]
+  groups_created      Group[]
+  UserConversation    UserConversation[]
+}
+
+model UserConversation {
+  id              Int          @id @default(autoincrement())
+  user_id         Int
+  conversation_id Int
+  User            User         @relation(fields: [user_id], references: [user_id])
+  Conversation    Conversation @relation(fields: [conversation_id], references: [conversation_id])
+
+  @@unique([conversation_id, user_id])
+}
+
+model Conversation {
+  conversation_id  Int                @id @default(autoincrement())
+  type             ConversationType
+  last_message_id  Int?               @unique
+  order_date       DateTime           @default(now())
+  created_at       DateTime           @default(now())
+  last_message     Message?           @relation(fields: [last_message_id], references: [message_id])
+  Group            Group?
+  UserConversation UserConversation[]
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+model Message {
+  message_id       Int           @id @default(autoincrement())
+  conversation_id  Int
+  sender_id        Int
+  message_type     MessageType
+  message_content  String?
+  media_url        String?
+  sent_at          DateTime      @default(now())
+  status           MessageStatus
+  sender           User          @relation(fields: [sender_id], references: [user_id])
+  last_message_for Conversation?
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+model Group {
+  group_id            Int           @id @unique
+  group_name          String
+  created_by          Int
+  created_at          DateTime      @default(now())
+  profile_picture_url String?
+  conversation        Conversation  @relation(fields: [group_id], references: [conversation_id])
+  members             GroupMember[]
+  creator             User          @relation(fields: [created_by], references: [user_id])
+}
+
+model GroupMember {
+  group_member_id Int       @id @default(autoincrement())
+  group_id        Int
+  user_id         Int
+  role            GroupRole
+  joined_at       DateTime  @default(now())
+  group           Group     @relation(fields: [group_id], references: [group_id])
+  user            User      @relation(fields: [user_id], references: [user_id])
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
