@@ -82,4 +82,10 @@ export const CommonErrors = {
     message: 'Conversation not exists',
     error: 'NotFound Error',
   },
+
+  MessageNotFound: {
+    statusCode: 404,
+    message: 'Conversation not exists',
+    error: 'NotFound Error',
+  },
 };

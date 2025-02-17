@@ -168,4 +168,13 @@ export class ConversationRepository {
 
     return conversation;
   }
+
+  async gseUserConversationByUserIdAndConversationId(
+    conversation_id: number,
+    user_id: number,
+  ) {
+    return this.dbRead.prisma.userConversation.findFirst({
+      where: { conversation_id, user_id },
+    });
+  }
 }
