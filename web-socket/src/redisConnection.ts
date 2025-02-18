@@ -1,4 +1,3 @@
-// src/RedisService.ts
 import { createClient, RedisClientType } from "redis";
 import { EventEmitter } from "events";
 

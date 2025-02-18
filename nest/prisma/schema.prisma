@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Otp {
+  id         Int      @id @default(autoincrement())
+  otp        String
+  email      String
+  created_at DateTime @default(now())
+}
+
 model User {
   user_id             Int                @id @default(autoincrement())
   name                String

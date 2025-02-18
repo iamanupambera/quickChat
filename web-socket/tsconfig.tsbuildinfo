@@ -1,1 +1,10 @@
-{"root":["./src/handlewebsocketmessage.ts","./src/index.ts","./src/redisconnection.ts","./src/userservice.ts","./src/validation.ts"],"version":"5.7.3"}
+{
+  "root": [
+    "./src/handlewebsocketmessage.ts",
+    "./src/index.ts",
+    "./src/redisconnection.ts",
+    "./src/userservice.ts",
+    "./src/validation.ts"
+  ],
+  "version": "5.7.3"
+}
