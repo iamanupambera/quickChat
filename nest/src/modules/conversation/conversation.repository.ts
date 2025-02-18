@@ -1,7 +1,6 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { PrismaWriteService } from '../prisma/prisma-write.service';
-import { CommonErrors } from 'src/helpers/error';
 
 @Injectable()
 export class ConversationRepository {
@@ -70,7 +69,17 @@ export class ConversationRepository {
     return this.dbRead.prisma.conversation.findUnique({
       where: { conversation_id },
       include: {
+        UserConversation: {
+          include: {
+            User: true,
+          },
+        },
         last_message: true,
+        Group: {
+          include: {
+            members: true,
+          },
+        },
       },
     });
   }
@@ -80,14 +89,6 @@ export class ConversationRepository {
     participantIds: number[],
     userId: number,
   ) {
-    const conversation = await this.dbRead.prisma.conversation.findUnique({
-      where: { conversation_id },
-    });
-
-    if (!conversation) {
-      throw new BadRequestException(CommonErrors.ConversationNotFound);
-    }
-
     const deletedUser = (
       await this.dbRead.prisma.userConversation.findMany({
         where: {
@@ -120,7 +121,7 @@ export class ConversationRepository {
       where: { user_id: { in: addedUser } },
     });
 
-    await this.dbWrite.prisma.$transaction(async (tx) => {
+    return await this.dbWrite.prisma.$transaction(async (tx) => {
       await tx.userConversation.deleteMany({
         where: { id: { in: deletedUser } },
       });
@@ -138,7 +139,7 @@ export class ConversationRepository {
         where: { conversation_id },
       });
 
-      if (userConversation.length > 2 && conversation.type === 'DIRECT') {
+      if (userConversation.length > 2) {
         await tx.conversation.update({
           where: { conversation_id },
           data: {
@@ -148,7 +149,7 @@ export class ConversationRepository {
 
         await tx.group.create({
           data: {
-            group_id: conversation.conversation_id,
+            group_id: conversation_id,
             group_name: 'untitled',
             created_by: userId,
             members: {
@@ -165,8 +166,6 @@ export class ConversationRepository {
         });
       }
     });
-
-    return conversation;
   }
 
   async gseUserConversationByUserIdAndConversationId(

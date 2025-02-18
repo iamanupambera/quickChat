@@ -68,6 +68,12 @@ export class ConversationService {
     { participantIds }: UpdateConversationDto,
     userId: number,
   ): Promise<response> {
+    const isExist = await this.conversationRepository.findById(id);
+
+    if (!isExist) {
+      throw new BadRequestException(CommonErrors.ConversationNotFound);
+    }
+
     const conversation = this.conversationRepository.updateById(
       id,
       participantIds,
